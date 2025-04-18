@@ -31,6 +31,9 @@ export const SocketProvider = ({ children }:any) => {
           console.log("Message Receive", message)
           addMessage(message)
         }
+        if(!selectedChatType && message.recipient._id && message.sender._id){
+          console.log('Notification Counter')
+        }
         addContactInContactList(message)
       };
 

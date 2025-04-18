@@ -5,12 +5,15 @@ import { apiClient } from "@/lib/api-client";
 import { GET_ALL_MESSAGES, GET_CHANNEL_MESSAGES, HOST } from "@/constants";
 import { MdFolderZip } from "react-icons/md";
 import { IoMdArrowRoundDown } from "react-icons/io";
-import { IoCloseSharp } from "react-icons/io5";
+import { IoCloseSharp, IoCopy } from "react-icons/io5";
+import { MdDelete, MdOutlineZoomOutMap } from "react-icons/md";
+import { BiSolidEditAlt } from "react-icons/bi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getColor } from "@/lib/utils";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
+  const tooltipRef = useRef<any>(null);
   const {
     selectedChatData,
     selectedChatType,
@@ -23,6 +26,9 @@ function MessageContainer() {
 
   const [showImage, setShowImage] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
+  const [tooltipVisibleIndex, setTooltipVisibleIndex] = useState<number | null>(
+    null
+  );
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -66,6 +72,22 @@ function MessageContainer() {
       }
     }
   }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
+
+  // Close tooltip if clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        tooltipRef.current &&
+        !(tooltipRef.current as any).contains(event.target)
+      ) {
+        setTooltipVisibleIndex(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const renderMessages = () => {
     let lastDate: any = null;
@@ -113,6 +135,87 @@ function MessageContainer() {
     setIsDownloading(false);
   };
 
+  const actionToolTipRender = (message: any) => {
+    return (
+      tooltipVisibleIndex === message._id && (
+        <div
+          ref={tooltipRef}
+          className="absolute top-full right-0 mt-2 bg-white text-gray-800 shadow-md rounded-md z-10 flex items-center space-x-1 px-2 py-1 border border-gray-200"
+        >
+          {message.messageType == "text" && (
+            <>
+              <button
+                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                onClick={() => {
+                  navigator.clipboard.writeText(message.content);
+                  setTooltipVisibleIndex(null);
+                }}
+              >
+                <IoCopy className="text-base" />
+                <span>Copy</span>
+              </button>
+              <button
+                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                onClick={() => {
+                  setTooltipVisibleIndex(null);
+                  // Add edit logic
+                }}
+              >
+                <BiSolidEditAlt className="text-base text-blue-500" />
+                <span>Edit</span>
+              </button>
+            </>
+          )}
+          <button
+            className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+            onClick={() => {
+              setTooltipVisibleIndex(null);
+              // Add delete logic
+            }}
+          >
+            <MdDelete className="text-base text-red-500" />
+            <span>Delete</span>
+          </button>
+
+          {message.messageType == "file" && (
+            <>
+              <button
+                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                onClick={() => {
+                  setTooltipVisibleIndex(null);
+                  downloadFile(message.fileUrl);
+                }}
+              >
+                <IoMdArrowRoundDown className="text-base text-blue-500" />
+                <span>Download</span>
+              </button>
+              <button
+                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                onClick={() => {
+                  setTooltipVisibleIndex(null);
+                  setShowImage(true);
+                  setImageUrl(message.fileUrl);
+                }}
+              >
+                <MdOutlineZoomOutMap className="text-base text-blue-500" />
+                <span>Zoom</span>
+              </button>
+            </>
+          )}
+        </div>
+      )
+    );
+  };
+
+  const tooltipVisible = (message: any) => {
+    if (message.sender == selectedChatData._id) {
+      return setTooltipVisibleIndex(null);
+    }
+    setTooltipVisibleIndex(
+      tooltipVisibleIndex === message._id ? null : message._id
+    );
+  };
+
   const renderDMMessages = (message: any) => {
     return (
       <div
@@ -122,30 +225,29 @@ function MessageContainer() {
       >
         {message.messageType == "text" && (
           <div
+            onClick={() => tooltipVisible(message)}
             className={`${
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
-                : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50" 
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words`}
+                : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
+            } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
             {message.content}
+            {actionToolTipRender(message)}
           </div>
         )}
         {message.messageType == "file" && (
           <div
+            onClick={() => tooltipVisible(message)}
             className={`${
               message.sender == selectedChatData._id
-                ?  "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
+                ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words`}
+            } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
             {checkIfImage(message.fileUrl) ? (
               <div className="cursor-pointer">
                 <img
-                  onClick={() => {
-                    setShowImage(true);
-                    setImageUrl(message.fileUrl);
-                  }}
                   src={`${HOST}/${message.fileUrl}`}
                   height={300}
                   width={300}
@@ -157,14 +259,15 @@ function MessageContainer() {
                   <MdFolderZip />
                 </span>
                 <span>{message.fileUrl.split("/").pop()}</span>
-                <span
+                {/* <span
                   className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
                   onClick={() => downloadFile(message.fileUrl)}
                 >
                   <IoMdArrowRoundDown />
-                </span>
+                </span> */}
               </div>
             )}
+            {actionToolTipRender(message)}
           </div>
         )}
         <div className="text-xs text-gray-600">
@@ -239,25 +342,25 @@ function MessageContainer() {
                   className="object-cover w-full h-full bg-black"
                 />
               )}
-                <AvatarFallback
-                  className={`uppercase h-8 w-8 text-lg flex items-center justify-center rounded-full ${getColor(
-                    message.sender.color
-                  )}`}
-                >
-                  {message.sender.firstName
-                    ? message.sender.firstName.split("").shift()
-                    : message.sender.email.split("").shift()}
-                </AvatarFallback>
+              <AvatarFallback
+                className={`uppercase h-8 w-8 text-lg flex items-center justify-center rounded-full ${getColor(
+                  message.sender.color
+                )}`}
+              >
+                {message.sender.firstName
+                  ? message.sender.firstName.split("").shift()
+                  : message.sender.email.split("").shift()}
+              </AvatarFallback>
             </Avatar>
             <span className="text-sm text-white/60">{`${message.sender.firstName} ${message.sender.lastName}`}</span>
             <span className="text-xs text-white/60">
-          {moment(message.createdAt).format("LT")}
-        </span>
+              {moment(message.createdAt).format("LT")}
+            </span>
           </div>
         ) : (
           <div className="text-xs text-white/60 mt-1">
-          {moment(message.createdAt).format("LT")}
-        </div>
+            {moment(message.createdAt).format("LT")}
+          </div>
         )}
       </div>
     );

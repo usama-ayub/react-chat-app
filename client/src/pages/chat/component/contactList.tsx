@@ -11,6 +11,7 @@ function ContactList(props: any) {
     selectedChatType,
     setSelectedChatType,
     setSelectedChatMessages,
+    directMessagesNotifications,
   } = useAppStore();
   const { contacts, isChannel } = props;
   const handleClick = (contact: any) => {
@@ -77,11 +78,11 @@ function ContactList(props: any) {
 
                 <div className="relative inline-block">
                   <IoIosNotifications className="text-neutral-400 font-light text-opacity-90 hover:text-neutral-100 cursor-pointer transition-all duration-300 text-2xl" />
-                  {/* {count > 0 && ( */}
+                  {directMessagesNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-semibold rounded-full px-1.5 py-0.5 leading-none">
-                      1
+                      {directMessagesNotifications}
                     </span>
-                  {/* )} */}
+                  )}
                 </div>
               </>
             )}
