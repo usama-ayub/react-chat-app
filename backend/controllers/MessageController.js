@@ -33,3 +33,17 @@ export const uploadFile = async (request, response) => {
       return response.status(500).send("Internal Server Error");
     }
   };
+
+export const uploadRecordings = async (request, response) => {
+    try {
+     if (!request.file) return response.status(404).send("File is required.");
+     const date = Date.now();
+     let fileDr = `uploads/recordings/${date}`;
+     let fileName = `${fileDr}${request.file.originalname}`;
+     mkdirSync(fileDr, {recursive:true});
+     renameSync(request.file.path, fileName);
+     return response.status(200).json({filePath: fileName});
+    } catch (error) {
+      return response.status(500).send("Internal Server Error");
+    }
+  };

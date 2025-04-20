@@ -25,6 +25,7 @@ app.use(cors({
 
 app.use("/uploads/profiles", express.static("uploads/profiles"));
 app.use("/uploads/files", express.static("uploads/files"));
+app.use("/uploads/recordings", express.static("uploads/recordings"));
 
 app.use(cookieParser());
 app.use(express.json());

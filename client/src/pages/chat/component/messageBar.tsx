@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { GrAttachment } from "react-icons/gr";
 import { IoSend } from "react-icons/io5";
 import { RiEmojiStickerLine } from "react-icons/ri";
+import { FaMicrophone } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
 import { useAppStore } from "@/store";
 import { useSocket } from "@/context/SocketContext";
 import { apiClient } from "@/lib/api-client";
 import { UPLOAD_FILE } from "@/constants";
+import CaptureAudio from "./captureAudio";
 
 function MessageBar() {
   const emojiRef = useRef<any>(null);
@@ -16,6 +18,7 @@ function MessageBar() {
 
   const [message, setMessage] = useState("");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: any) {
@@ -106,40 +109,61 @@ function MessageBar() {
 
   return (
     <div className="h-10[vh] bg-[#1c1d25] flex justify-center items-center px-8 mb-6 gap-6">
-      <div className="flex flex-1 bg-[#2a2b33] rounded-md items-center gap-5 pr-5">
-        <input
-          type="text"
-          className="flex-1 p-5 bg-transparent rounded-md focus:border-none focus:outline-none"
-          placeholder="Enter Message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <button onClick={handleAttachmentClick} className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all">
-          <GrAttachment className="text-2xl" />
+   {
+    !showAudioRecorder &&
+    (   <div className="flex flex-1 bg-[#2a2b33] rounded-md items-center gap-5 pr-5">
+      <input
+        type="text"
+        className="flex-1 p-5 bg-transparent rounded-md focus:border-none focus:outline-none"
+        placeholder="Enter Message"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+      <button
+        onClick={handleAttachmentClick}
+        className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+      >
+        <GrAttachment className="text-2xl" />
+      </button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleAttachmentChange}
+      />
+      <div className="relative">
+        <button
+          className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+          onClick={() => setEmojiPickerOpen(true)}
+        >
+          <RiEmojiStickerLine className="text-2xl" />
         </button>
-        <input type="file" ref={fileInputRef} className="hidden" onChange={handleAttachmentChange}/>
-        <div className="relative">
-          <button
-            className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
-            onClick={() => setEmojiPickerOpen(true)}
-          >
-            <RiEmojiStickerLine className="text-2xl" />
-          </button>
-          <div className="absolute bottom-16 right-0" ref={emojiRef}>
-            <EmojiPicker
-              open={emojiPickerOpen}
-              onEmojiClick={handleEmoji}
-              autoFocusSearch={false}
-            />
-          </div>
+        <div className="absolute bottom-16 right-0" ref={emojiRef}>
+          <EmojiPicker
+            open={emojiPickerOpen}
+            onEmojiClick={handleEmoji}
+            autoFocusSearch={false}
+          />
         </div>
       </div>
-      <button
-        onClick={handleSendMessage}
-        className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
-      >
-        <IoSend className="text-2xl" />
-      </button>
+    </div>)
+   }
+      {message.length ? (
+        <button
+          onClick={handleSendMessage}
+          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+        >
+          <IoSend className="text-2xl" />
+        </button>
+      ) : (
+        <button
+          onClick={()=>setShowAudioRecorder(true)}
+          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+        >
+          <FaMicrophone className="text-2xl" />
+        </button>
+      )}
+      {showAudioRecorder && <CaptureAudio hide={setShowAudioRecorder} />}
     </div>
   );
 }
