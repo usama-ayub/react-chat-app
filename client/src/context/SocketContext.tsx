@@ -23,17 +23,38 @@ export const SocketProvider = ({ children }:any) => {
       });
 
       const handleReciveMessage = (message:any)=>{
-        const {selectedChatData, selectedChatType, addMessage, addContactInContactList} = useAppStore.getState();
+        const {selectedChatData, selectedChatType, addMessage, addContactInContactList, directMessagesNotifications, setDirectMessagesNotifications} = useAppStore.getState();
         if(selectedChatType !== undefined && 
           (selectedChatData._id === message.sender._id ||
             selectedChatData._id === message.recipient._id)
         ){
-          console.log("Message Receive", message)
           addMessage(message)
         }
-        if(!selectedChatType && message.recipient._id && message.sender._id){
-          console.log('Notification Counter')
+
+        if (!selectedChatType && message.recipient._id && message.sender._id) {
+          const recipientId = message.sender._id;
+          const updatedNotifications = { ...directMessagesNotifications };
+      
+          if (updatedNotifications[recipientId]) {
+            updatedNotifications[recipientId] += 1;
+          } else {
+            updatedNotifications[recipientId] = 1;
+          }
+          setDirectMessagesNotifications(updatedNotifications);
         }
+
+        if (selectedChatType && message.recipient._id && message.sender._id && (selectedChatData._id !== message.sender._id)) {
+          const recipientId = message.sender._id;
+          const updatedNotifications = { ...directMessagesNotifications };
+      
+          if (updatedNotifications[recipientId]) {
+            updatedNotifications[recipientId] += 1;
+          } else {
+            updatedNotifications[recipientId] = 1;
+          }
+          setDirectMessagesNotifications(updatedNotifications);
+        }
+
         addContactInContactList(message)
       };
 
@@ -49,7 +70,9 @@ export const SocketProvider = ({ children }:any) => {
 
       socket.current.on('recieveMessage',handleReciveMessage);
       socket.current.on('recieve-channel-message',handleChannelReciveMessage);
-
+      socket.current.on("userStatusUpdate", ({ onlineUsers }:any) => {
+        useAppStore.getState().setOnlineUsers(onlineUsers);
+      });
       return () => {
         socket.current.disconnect();
       };

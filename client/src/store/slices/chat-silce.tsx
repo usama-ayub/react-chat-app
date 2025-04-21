@@ -8,9 +8,9 @@ export const createChatSlice = (set: any, get: any) => ({
   fileUploadProgress: 0,
   fileDownloadProgress: 0,
   channels: [],
-  directMessagesNotifications:0,
+  directMessagesNotifications:{},
   setChannels: (channels: Array<any>) => set({ channels }),
-  setDirectMessagesNotifications: (directMessagesNotifications: number) => set({ directMessagesNotifications }),
+  setDirectMessagesNotifications: (directMessagesNotifications: any) => set({ directMessagesNotifications }),
   setIsUploading: (isUploading: boolean) => set({ isUploading }),
   setIsDownloading: (isDownloading: boolean) => set({ isDownloading }),
   setFileUploadProgress: (fileUploadProgress: number) =>

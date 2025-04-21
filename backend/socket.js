@@ -79,11 +79,15 @@ const setupSocket = (server) => {
       }
     }
   }
-
+  const broadcastUserStatus = () => {
+    const onlineUsers = Array.from(userSocketMap.keys());
+    io.emit("userStatusUpdate", { onlineUsers });
+  };
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
     if (userId) {
       userSocketMap.set(userId, socket.id);
+      broadcastUserStatus();
       console.log(`User connected: ${userId} with socket ID: ${socket.id}`);
     } else {
       console.log("User Id not provided during connection");
@@ -91,7 +95,10 @@ const setupSocket = (server) => {
 
     socket.on("sendMessage", sendMessage);
     socket.on("send-channel-message", sendChannelMessage);
-    socket.on("disconnect", () => disconnect(socket));
+    socket.on("disconnect", () => {
+      disconnect(socket);
+      broadcastUserStatus();
+    });
   });
 };
 
