@@ -6,14 +6,20 @@ import { GET_ALL_MESSAGES, GET_CHANNEL_MESSAGES, HOST } from "@/constants";
 import { MdFolderZip } from "react-icons/md";
 import { IoMdArrowRoundDown } from "react-icons/io";
 import { IoCloseSharp, IoCopy } from "react-icons/io5";
-import { MdDelete, MdOutlineZoomOutMap } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSolidEditAlt } from "react-icons/bi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getColor } from "@/lib/utils";
+import VoiceMessage from "./voiceMessage";
+import { Input } from "@/components/ui/input";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
   const tooltipRef = useRef<any>(null);
+  const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const {
     selectedChatData,
     selectedChatType,
@@ -29,6 +35,8 @@ function MessageContainer() {
   const [tooltipVisibleIndex, setTooltipVisibleIndex] = useState<number | null>(
     null
   );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -73,7 +81,6 @@ function MessageContainer() {
     }
   }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
 
-  // Close tooltip if clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -89,22 +96,81 @@ function MessageContainer() {
     };
   }, []);
 
+  const scrollToMessage = (messageId: string) => {
+    const element = messageRefs.current[messageId];
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      element.classList.add("message-highlight");
+      setTimeout(() => {
+        element.classList.remove("message-highlight");
+      }, 2000);
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+    debounceTimeout.current = setTimeout(() => {
+      const results = selectedChatMessages.filter(
+        (msg: any) =>
+          msg.messageType === "text" &&
+          msg.content?.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(results);
+    }, 500);
+  };
+
+  const searchInput = () => {
+    return (
+      <div className="flex justify-center">
+        <div className="w-1/3 p-4">
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search messages"
+            className="p-2 border rounded"
+          />
+          {searchResults.map((msg) => (
+            <div
+              key={msg._id}
+              onClick={() => scrollToMessage(msg._id)}
+              className="cursor-pointer hover:bg-purple-500 p-2 rounded"
+            >
+              {msg.content}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderMessages = () => {
     let lastDate: any = null;
-    return selectedChatMessages.map((message: any, index: number) => {
+    return selectedChatMessages.map((message: any) => {
       const messageDate = moment(message.createdAt).format("YYYY-MM-DD");
       const showDate = messageDate !== lastDate;
       lastDate = messageDate;
       return (
-        <div key={index}>
-          {showDate && (
-            <div className="text-center text-gray-500 my-2">
-              {moment(message.createdAt).format("LL")}
-            </div>
-          )}
-          {selectedChatType == "contact" && renderDMMessages(message)}
-          {selectedChatType == "channel" && renderChannelMessages(message)}
-        </div>
+          <div
+            key={message._id}
+            ref={(el) => {
+              messageRefs.current[message._id] = el;
+            }}
+          >
+            {showDate && (
+              <div className="text-center text-gray-500 my-2">
+                {moment(message.createdAt).format("LL")}
+              </div>
+            )}
+            {selectedChatType == "contact" && renderDMMessages(message)}
+            {selectedChatType == "channel" && renderChannelMessages(message)}
+          </div>
       );
     });
   };
@@ -114,7 +180,15 @@ function MessageContainer() {
       /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
     return imageRegex.test(filePath);
   };
-
+  const checkIfDocument = (filePath: string): boolean => {
+    const docExtensions = /\.(docx?|xlsx?|pptx?|pdf|txt|rtf|odt|ods|odp|csv)$/i;
+    return docExtensions.test(filePath);
+  };
+  const checkIfAudio = (filePath: string) => {
+    const imageRegex = /\.(mp3|wav|ogg)$/i;
+    return imageRegex.test(filePath);
+  };
+  
   const downloadFile = async (url: any) => {
     setIsDownloading(true);
     setFileDownloadProgress(0);
@@ -140,12 +214,12 @@ function MessageContainer() {
       tooltipVisibleIndex === message._id && (
         <div
           ref={tooltipRef}
-          className="absolute top-full right-0 mt-2 bg-white text-gray-800 shadow-md rounded-md z-10 flex items-center space-x-1 px-2 py-1 border border-gray-200"
+          className="absolute right-full ml-2 top-1/2 -translate-y-1/2 bg-white text-gray-800 shadow-md rounded-md z-20 flex flex-col px-2 py-1 border border-gray-200 w-max"
         >
-          {message.messageType == "text" && (
+          {message.messageType === "text" && (
             <>
               <button
-                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
                 onClick={() => {
                   navigator.clipboard.writeText(message.content);
                   setTooltipVisibleIndex(null);
@@ -155,10 +229,10 @@ function MessageContainer() {
                 <span>Copy</span>
               </button>
               <button
-                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
                 onClick={() => {
                   setTooltipVisibleIndex(null);
-                  // Add edit logic
+                  // Add edit logic here
                 }}
               >
                 <BiSolidEditAlt className="text-base text-blue-500" />
@@ -167,40 +241,27 @@ function MessageContainer() {
             </>
           )}
           <button
-            className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+            className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
             onClick={() => {
               setTooltipVisibleIndex(null);
-              // Add delete logic
+              // Add delete logic here
             }}
           >
             <MdDelete className="text-base text-red-500" />
             <span>Delete</span>
           </button>
 
-          {message.messageType == "file" && (
-            <>
-              <button
-                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
-                onClick={() => {
-                  setTooltipVisibleIndex(null);
-                  downloadFile(message.fileUrl);
-                }}
-              >
-                <IoMdArrowRoundDown className="text-base text-blue-500" />
-                <span>Download</span>
-              </button>
-              <button
-                className="flex items-center gap-1 px-2 py-1 text-sm hover:bg-gray-100 rounded"
-                onClick={() => {
-                  setTooltipVisibleIndex(null);
-                  setShowImage(true);
-                  setImageUrl(message.fileUrl);
-                }}
-              >
-                <MdOutlineZoomOutMap className="text-base text-blue-500" />
-                <span>Zoom</span>
-              </button>
-            </>
+          {message.messageType === "file" && (
+            <button
+              className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+              onClick={() => {
+                setTooltipVisibleIndex(null);
+                downloadFile(message.fileUrl);
+              }}
+            >
+              <IoMdArrowRoundDown className="text-base text-blue-500" />
+              <span>Download</span>
+            </button>
           )}
         </div>
       )
@@ -225,47 +286,72 @@ function MessageContainer() {
       >
         {message.messageType == "text" && (
           <div
-            onClick={() => tooltipVisible(message)}
             className={`${
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
             } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
+            {message.sender !== selectedChatData._id && (
+              <div
+                onClick={() => tooltipVisible(message)}
+                className={`absolute top-1/2 -translate-y-1/2 ${
+                  message.sender === selectedChatData._id
+                    ? "-right-6"
+                    : "-left-6"
+                }`}
+              >
+                <BsThreeDotsVertical className="cursor-pointer text-gray-400 hover:text-white transition" />
+              </div>
+            )}
             {message.content}
+
             {actionToolTipRender(message)}
           </div>
         )}
         {message.messageType == "file" && (
           <div
-            onClick={() => tooltipVisible(message)}
             className={`${
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
             } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
-            {checkIfImage(message.fileUrl) ? (
+            {message.sender !== selectedChatData._id && (
+              <div
+                onClick={() => tooltipVisible(message)}
+                className={`absolute top-1/2 -translate-y-1/2 ${
+                  message.sender === selectedChatData._id
+                    ? "-right-6"
+                    : "-left-6"
+                }`}
+              >
+                <BsThreeDotsVertical className="cursor-pointer text-gray-400 hover:text-white transition" />
+              </div>
+            )}
+            {checkIfImage(message.fileUrl) && (
               <div className="cursor-pointer">
                 <img
+                  onClick={() => {
+                    setShowImage(true);
+                    setImageUrl(message.fileUrl);
+                  }}
                   src={`${HOST}/${message.fileUrl}`}
                   height={300}
                   width={300}
                 />
               </div>
-            ) : (
+            )}
+            {checkIfDocument(message.fileUrl) && (
               <div className="flex items-center justify-center gap-4">
                 <span className="text-white/8 text-3xl bg-black/20 rounded-full p-3">
                   <MdFolderZip />
                 </span>
                 <span>{message.fileUrl.split("/").pop()}</span>
-                {/* <span
-                  className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
-                  onClick={() => downloadFile(message.fileUrl)}
-                >
-                  <IoMdArrowRoundDown />
-                </span> */}
               </div>
+            )}
+            {checkIfAudio(message.fileUrl) && (
+              <VoiceMessage message={message} />
             )}
             {actionToolTipRender(message)}
           </div>
@@ -368,6 +454,7 @@ function MessageContainer() {
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
+      {searchInput()}
       {renderMessages()}
       <div ref={scrollRef} />
       {showImage && (

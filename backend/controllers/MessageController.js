@@ -34,13 +34,13 @@ export const uploadFile = async (request, response) => {
     }
   };
 
-export const uploadRecordings = async (request, response) => {
+export const uploadAudio = async (request, response) => {
     try {
-     if (!request.file) return response.status(404).send("File is required.");
+      console.log(request.file)
+      console.log(request.audio)
+     if (!request.file) return response.status(404).send("Audio is required.");
      const date = Date.now();
-     let fileDr = `uploads/recordings/${date}`;
-     let fileName = `${fileDr}${request.file.originalname}`;
-     mkdirSync(fileDr, {recursive:true});
+     let fileName = `uploads/recordings/${date}${request.file.originalname}`;
      renameSync(request.file.path, fileName);
      return response.status(200).json({filePath: fileName});
     } catch (error) {

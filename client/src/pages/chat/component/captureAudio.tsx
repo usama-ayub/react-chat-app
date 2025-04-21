@@ -9,9 +9,13 @@ import {
 } from "react-icons/fa";
 import { MdSend } from "react-icons/md";
 import WaveSurfer from 'wavesurfer.js'
+import { apiClient } from "@/lib/api-client";
+import { useSocket } from "@/context/SocketContext";
+import { AUDIO_FILE } from "@/constants";
 
 function CaptureAudio({ hide }: any) {
-//   const { selectedChatData, selectedChatType, userInfo } = useAppStore();
+  const { selectedChatData, selectedChatType, userInfo,setIsUploading,setFileUploadProgress } = useAppStore();
+  const socket:any = useSocket();
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<any>(null);
@@ -68,7 +72,7 @@ const handleStartRecording = () => {
     setCurrentPlaybackTime(0);
     setTotalDuration(0);
     setIsRecording(true);
-  
+    setRecordedAudio(null);
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -147,7 +151,55 @@ const handleStopRecording = () => {
   };
 
 
-  const handleSendRecoring = async () => {};
+  const handleSendRecoring = async () => {
+     try {
+
+          if(renderAudio){
+            const formData = new FormData();
+            formData.append("audio",renderAudio);
+            setIsUploading(true);
+          const response = await apiClient.post(
+            AUDIO_FILE,
+            formData,
+            {
+              withCredentials: true,
+              onUploadProgress:(data:any)=>{
+                setFileUploadProgress(Math.round((100 * data.loaded) / data.total));
+              }
+            }
+          );
+          if (response.status == 200) {
+            setIsUploading(false);
+            setRecordingDuration(0);
+            setCurrentPlaybackTime(0);
+            setTotalDuration(0);
+            setIsRecording(false);
+            setIsPlaying(false);
+            setRecordedAudio(null);
+            hide();
+            if(selectedChatType == 'contact'){
+              socket.emit("sendMessage",{
+                sender: userInfo._id,
+                content:undefined,
+                recipient: selectedChatData._id,
+                messageType:"file",
+                fileUrl:response.data.filePath
+              })
+            } else if(selectedChatType == 'channel'){
+              socket.emit("send-channel-message",{
+                sender: userInfo._id,
+                content:undefined,
+                channelId: selectedChatData._id,
+                messageType:"file",
+                fileUrl:response.data.filePath
+              })
+            }
+          }
+          }
+        } catch (e) {
+          setIsUploading(false);
+        }
+  };
 
   const formateTime = (time: number) => {
     if (isNaN(time)) return "00:00";
