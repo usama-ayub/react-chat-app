@@ -120,7 +120,7 @@ function MessageBar() {
           />
           <button
             onClick={handleAttachmentClick}
-            className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+            className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all cursor-pointer"
           >
             <GrAttachment className="text-2xl" />
           </button>
@@ -132,7 +132,7 @@ function MessageBar() {
           />
           <div className="relative">
             <button
-              className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+              className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all cursor-pointer"
               onClick={() => setEmojiPickerOpen(true)}
             >
               <RiEmojiStickerLine className="text-2xl" />
@@ -150,15 +150,15 @@ function MessageBar() {
       {message.length ? (
         <button
           onClick={handleSendMessage}
-          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all cursor-pointer"
         >
           <IoSend className="text-2xl" />
         </button>
       ):<></>}
-      {!showAudioRecorder && (
+      {!message.length && !showAudioRecorder && (
         <button
           onClick={() => setShowAudioRecorder(true)}
-          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+          className="bg-[#8417ff] rounded-md flex items-center justify-center p-5 hover:bg-[#741bda] focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white duration-300 transition-all cursor-pointer"
         >
           <FaMicrophone className="text-2xl" />
         </button>

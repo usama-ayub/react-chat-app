@@ -13,12 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getColor } from "@/lib/utils";
 import VoiceMessage from "./voiceMessage";
 import { Input } from "@/components/ui/input";
+import { RiEmojiStickerLine } from "react-icons/ri";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
   const tooltipRef = useRef<any>(null);
   const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const emojiMRef = useRef<any>(null);
 
   const {
     selectedChatData,
@@ -37,6 +39,8 @@ function MessageContainer() {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -148,6 +152,10 @@ function MessageContainer() {
         </div>
       </div>
     );
+  };
+
+  const handleEmoji = async (emoji: any) => {
+    console.log(emoji);
   };
 
   const renderMessages = () => {
@@ -292,19 +300,25 @@ function MessageContainer() {
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
             } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
-            {message.sender !== selectedChatData._id && (
+            {!message.isDelete && message.sender !== selectedChatData._id && (
               <div
-                onClick={() => tooltipVisible(message)}
-                className={`absolute top-1/2 -translate-y-1/2 ${
+                className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
                   message.sender === selectedChatData._id
-                    ? "-right-6"
-                    : "-left-6"
+                    ? "-right-10"
+                    : "-left-12"
                 }`}
               >
-                <BsThreeDotsVertical className="cursor-pointer text-gray-400 hover:text-white transition" />
+                <BsThreeDotsVertical
+                  onClick={() => tooltipVisible(message)}
+                  className="cursor-pointer text-gray-400 hover:text-white transition"
+                />
+                <RiEmojiStickerLine
+                  onClick={() => setEmojiPickerOpen(true)}
+                  className="cursor-pointer text-gray-400 hover:text-white transition"
+                />
               </div>
             )}
-            {message.content}
+            {message.isDelete ? "Deleted" : message.content}
 
             {actionToolTipRender(message)}
           </div>
@@ -317,19 +331,26 @@ function MessageContainer() {
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
             } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
-            {message.sender !== selectedChatData._id && (
+            {!message.isDelete && message.sender !== selectedChatData._id && (
               <div
-                onClick={() => tooltipVisible(message)}
-                className={`absolute top-1/2 -translate-y-1/2 ${
+                className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
                   message.sender === selectedChatData._id
-                    ? "-right-6"
-                    : "-left-6"
+                    ? "-right-10"
+                    : "-left-12"
                 }`}
               >
-                <BsThreeDotsVertical className="cursor-pointer text-gray-400 hover:text-white transition" />
+                <BsThreeDotsVertical
+                  onClick={() => tooltipVisible(message)}
+                  className="cursor-pointer text-gray-400 hover:text-white transition"
+                />
+                <RiEmojiStickerLine
+                  onClick={() => setEmojiPickerOpen(true)}
+                  className="cursor-pointer text-gray-400 hover:text-white transition"
+                />
               </div>
             )}
-            {checkIfImage(message.fileUrl) && (
+             {message.isDelete && "Deleted"} 
+            {!message.isDelete && checkIfImage(message.fileUrl) && (
               <div className="cursor-pointer">
                 <img
                   onClick={() => {
@@ -342,7 +363,7 @@ function MessageContainer() {
                 />
               </div>
             )}
-            {checkIfDocument(message.fileUrl) && (
+            {!message.isDelete &&checkIfDocument(message.fileUrl) && (
               <div className="flex items-center justify-center gap-4">
                 <span className="text-white/8 text-3xl bg-black/20 rounded-full p-3">
                   <MdFolderZip />
@@ -350,7 +371,7 @@ function MessageContainer() {
                 <span>{message.fileUrl.split("/").pop()}</span>
               </div>
             )}
-            {checkIfAudio(message.fileUrl) && (
+            {!message.isDelete &&checkIfAudio(message.fileUrl) && (
               <VoiceMessage message={message} />
             )}
             {actionToolTipRender(message)}

@@ -70,7 +70,7 @@ function ProfileInfo() {
             <Tooltip>
               <TooltipTrigger>
                 <FiEdit2
-                  className="text-purple-500 text-xl font-medium"
+                  className="text-purple-500 text-xl font-medium cursor-pointer"
                   onClick={() => navigate("/profile")}
                 />
               </TooltipTrigger>
@@ -83,7 +83,7 @@ function ProfileInfo() {
             <Tooltip>
               <TooltipTrigger>
                 <IoPowerSharp
-                  className="text-red-500 text-xl font-medium"
+                  className="text-red-500 text-xl font-medium cursor-pointer"
                   onClick={logOut}
                 />
               </TooltipTrigger>
