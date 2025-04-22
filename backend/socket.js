@@ -83,6 +83,20 @@ const setupSocket = (server) => {
     const onlineUsers = Array.from(userSocketMap.keys());
     io.emit("userStatusUpdate", { onlineUsers });
   };
+
+  const startTyping = (socket) =>  ({ recipientId }) =>{
+    const recipientSocketId = userSocketMap.get(recipientId);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit("typing", { senderId: socket.handshake.query.userId });
+    }
+  }
+  const stopTyping = (socket) =>  ({ recipientId }) => {
+    const recipientSocketId = userSocketMap.get(recipientId);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit("stopTyping", { senderId: socket.handshake.query.userId });
+    }
+  }
+
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
     if (userId) {
@@ -95,10 +109,12 @@ const setupSocket = (server) => {
 
     socket.on("sendMessage", sendMessage);
     socket.on("send-channel-message", sendChannelMessage);
+    socket.on("typing", startTyping(socket));
+    socket.on("stopTyping", stopTyping(socket));
     socket.on("disconnect", () => {
       disconnect(socket);
       broadcastUserStatus();
-    });
+    });    
   });
 };
 

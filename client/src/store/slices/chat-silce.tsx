@@ -9,8 +9,20 @@ export const createChatSlice = (set: any, get: any) => ({
   fileDownloadProgress: 0,
   channels: [],
   directMessagesNotifications:{},
+  typingUsers: {},
   setChannels: (channels: Array<any>) => set({ channels }),
   setDirectMessagesNotifications: (directMessagesNotifications: any) => set({ directMessagesNotifications }),
+  setTypingUser: (userId: string) => {
+    const typingUsers = { ...get().typingUsers };
+    typingUsers[userId] = true;
+    set({ typingUsers });
+  },
+  removeTypingUser: (userId: string) => {
+    const typingUsers = { ...get().typingUsers };
+    delete typingUsers[userId];
+    set({ typingUsers });
+  },
+
   setIsUploading: (isUploading: boolean) => set({ isUploading }),
   setIsDownloading: (isDownloading: boolean) => set({ isDownloading }),
   setFileUploadProgress: (fileUploadProgress: number) =>

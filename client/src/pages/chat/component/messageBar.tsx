@@ -13,12 +13,36 @@ import CaptureAudio from "./captureAudio";
 function MessageBar() {
   const emojiRef = useRef<any>(null);
   const fileInputRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const socket:any = useSocket();
- const {selectedChatData, selectedChatType,userInfo, setIsUploading, setFileUploadProgress} = useAppStore();
+  const {selectedChatData, selectedChatType,userInfo, setIsUploading, setFileUploadProgress} = useAppStore();
 
   const [message, setMessage] = useState("");
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showAudioRecorder) {
+      socket.emit("typing", { recipientId: selectedChatData._id });
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      // typingTimeoutRef.current = setTimeout(() => {
+      //   socket.emit("stopTyping", {
+      //     recipientId: selectedChatData._id,
+      //   });
+      // }, 2000);
+    }
+  }, [showAudioRecorder]);
 
   useEffect(() => {
     function handleClickOutside(event: any) {
@@ -86,6 +110,7 @@ function MessageBar() {
   }
   const handleSendMessage = async () => {
     try {
+      socket.emit("stopTyping", { recipientId: selectedChatData._id });
       if(selectedChatType == 'contact'){
         socket.emit("sendMessage",{
           sender: userInfo._id,
@@ -116,7 +141,19 @@ function MessageBar() {
             className="flex-1 p-5 bg-transparent rounded-md focus:border-none focus:outline-none"
             placeholder="Enter Message"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setMessage(value);
+              socket.emit("typing", { recipientId: selectedChatData._id });
+              if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+              }
+              typingTimeoutRef.current = setTimeout(() => {
+                socket.emit("stopTyping", {
+                  recipientId: selectedChatData._id,
+                });
+              }, 2000);
+            }}
           />
           <button
             onClick={handleAttachmentClick}
@@ -154,7 +191,9 @@ function MessageBar() {
         >
           <IoSend className="text-2xl" />
         </button>
-      ):<></>}
+      ) : (
+        <></>
+      )}
       {!message.length && !showAudioRecorder && (
         <button
           onClick={() => setShowAudioRecorder(true)}

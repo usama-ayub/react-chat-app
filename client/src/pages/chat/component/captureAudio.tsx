@@ -153,7 +153,7 @@ const handleStopRecording = () => {
 
   const handleSendRecoring = async () => {
      try {
-
+      socket.emit("stopTyping", { recipientId: selectedChatData._id });
           if(renderAudio){
             const formData = new FormData();
             formData.append("audio",renderAudio);
@@ -214,7 +214,10 @@ const handleStopRecording = () => {
       <div className="pt-1">
         <FaTrash
           className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
-          onClick={() => hide()}
+          onClick={() => {
+            socket.emit("stopTyping", { recipientId: selectedChatData._id });
+            hide()
+          }}
         />
       </div>
       <div className="mx-4 py-2 px-4 text-white text-lg flex gap-3 justify-center items-center rounded-full drop-shadow-lg bg-search-input-container">

@@ -73,6 +73,13 @@ export const SocketProvider = ({ children }:any) => {
       socket.current.on("userStatusUpdate", ({ onlineUsers }:any) => {
         useAppStore.getState().setOnlineUsers(onlineUsers);
       });
+      socket.current.on("typing", ({ senderId }:any) => {
+        useAppStore.getState().setTypingUser(senderId);
+      });
+      
+      socket.current.on("stopTyping", ({ senderId }:any) => {
+        useAppStore.getState().removeTypingUser(senderId);
+      });
       return () => {
         socket.current.disconnect();
       };

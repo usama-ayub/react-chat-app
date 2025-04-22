@@ -30,6 +30,7 @@ function MessageContainer() {
     setSelectedChatMessages,
     setFileDownloadProgress,
     setIsDownloading,
+    typingUsers
   } = useAppStore();
 
   const [showImage, setShowImage] = useState(false);
@@ -47,6 +48,7 @@ function MessageContainer() {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [selectedChatMessages]);
+
 
   useEffect(() => {
     const getMessages = async () => {
@@ -477,6 +479,12 @@ function MessageContainer() {
     <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
       {searchInput()}
       {renderMessages()}
+      {selectedChatType === "contact" &&
+            typingUsers[selectedChatData._id] && (
+              <div className="ml-2 text-sm text-center italic text-white/60 animate-pulse">
+                {`${selectedChatData.firstName || "User"} is recording/typing...`}
+              </div>
+            )}  
       <div ref={scrollRef} />
       {showImage && (
         <div className="fixed z-[1000] top-0 left-0 h-[100vh] w-[100vw] flex items-center justify-center backdrop-blur-lg flex-col">
