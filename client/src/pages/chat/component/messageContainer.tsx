@@ -14,6 +14,7 @@ import { getColor } from "@/lib/utils";
 import VoiceMessage from "./voiceMessage";
 import { Input } from "@/components/ui/input";
 import { RiEmojiStickerLine } from "react-icons/ri";
+import { useSocket } from "@/context/SocketContext";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
@@ -32,6 +33,7 @@ function MessageContainer() {
     setIsDownloading,
     typingUsers
   } = useAppStore();
+  const socket:any = useSocket();
 
   const [showImage, setShowImage] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
@@ -124,7 +126,7 @@ function MessageContainer() {
     debounceTimeout.current = setTimeout(() => {
       const results = selectedChatMessages.filter(
         (msg: any) =>
-          msg.messageType === "text" &&
+          msg.messageType === "text" && !msg.isDelete &&
           msg.content?.toLowerCase().includes(query.toLowerCase())
       );
       setSearchResults(results);
@@ -254,7 +256,19 @@ function MessageContainer() {
             className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
             onClick={() => {
               setTooltipVisibleIndex(null);
-              // Add delete logic here
+              if(selectedChatType == 'contact'){
+                socket.emit("deleteDMMessage",{
+                  sender: userInfo._id,
+                  recipient: selectedChatData._id,
+                  messageId: message._id
+                })
+              } else if(selectedChatType == 'channel'){
+                socket.emit("deleteCHMessage",{
+                  sender: userInfo._id,
+                  channelId: selectedChatData._id,
+                  messageId: message._id
+                })
+              }
             }}
           >
             <MdDelete className="text-base text-red-500" />
@@ -300,7 +314,7 @@ function MessageContainer() {
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
+            } ${message.isDelete ? 'opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed' : ''} border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
             {!message.isDelete && message.sender !== selectedChatData._id && (
               <div
@@ -331,7 +345,7 @@ function MessageContainer() {
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
+            } ${message.isDelete ? 'opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed' : ''} border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
             {!message.isDelete && message.sender !== selectedChatData._id && (
               <div

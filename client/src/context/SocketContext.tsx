@@ -67,7 +67,17 @@ export const SocketProvider = ({ children }:any) => {
         }
         addChannelInChannelList(message)
       };
-
+      const handleDMDeleteMessage =(message:any)=>{
+        const {selectedChatType, selectedChatMessages, setSelectedChatMessages} = useAppStore.getState();
+        if(selectedChatType){
+          const selectedChat = [...selectedChatMessages];
+          const index = selectedChat.findIndex((messageId:any)=>{
+             return messageId._id == message._id
+          });
+          selectedChat[index].isDelete = message.isDelete;
+          setSelectedChatMessages(selectedChat);
+        }
+      }
       socket.current.on('recieveMessage',handleReciveMessage);
       socket.current.on('recieve-channel-message',handleChannelReciveMessage);
       socket.current.on("userStatusUpdate", ({ onlineUsers }:any) => {
@@ -80,6 +90,7 @@ export const SocketProvider = ({ children }:any) => {
       socket.current.on("stopTyping", ({ senderId }:any) => {
         useAppStore.getState().removeTypingUser(senderId);
       });
+      socket.current.on('deleteDMMessage',handleDMDeleteMessage);
       return () => {
         socket.current.disconnect();
       };

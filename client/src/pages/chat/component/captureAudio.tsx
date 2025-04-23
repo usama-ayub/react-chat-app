@@ -220,7 +220,7 @@ const handleStopRecording = () => {
           }}
         />
       </div>
-      <div className="mx-4 py-2 px-4 text-white text-lg flex gap-3 justify-center items-center rounded-full drop-shadow-lg bg-search-input-container">
+      <div className="mx-4 py-[10px] px-[15px] text-white text-lg flex gap-3 justify-center items-center rounded-[30px] shadow-md bg-[#1e1d1d]">
         {isRecording ? (
           <div className="text-red-500 animate-pulse 2-60 text-center">
             Recording <span>{recordingDuration}s</span>
@@ -257,7 +257,7 @@ const handleStopRecording = () => {
         </div>
         <div>
           <MdSend
-            className="text-panel-header-icon cursor-pointer mr-4"
+            className="text-gray-500 hover:text-blue-500 transition duration-200 text-xl cursor-pointer mr-4"
             title="Send"
             onClick={handleSendRecoring}
           />

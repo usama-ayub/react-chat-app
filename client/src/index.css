@@ -131,17 +131,6 @@
   font-style: normal;
 }
 
-.bg-search-input-container {
-  background-color: #1e1d1d; /* light gray background */
-  padding: 10px 15px;       /* some space inside the container */
-  border-radius: 30px;       /* rounded corners */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* subtle shadow */
-}
-
-.text-panel-header-icon {
-  @apply text-gray-500 hover:text-blue-500 transition duration-200 text-xl;
-}
-
 @keyframes flash {
   0% { background-color: #fefcbf; }
   100% { background-color: transparent; }

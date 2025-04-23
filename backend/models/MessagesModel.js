@@ -23,6 +23,14 @@ const messageSchema = new mongoose.Schema(
                 return this.messageType == 'text';
             },
         },
+        isDelete : {
+           type:Boolean,
+           default:false
+        },
+        isEdit : {
+            type:Boolean,
+            default:false
+        },
         fileUrl: {
             type: String,
             required: function (){
