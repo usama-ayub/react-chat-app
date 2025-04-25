@@ -15,6 +15,16 @@ import VoiceMessage from "./voiceMessage";
 import { Input } from "@/components/ui/input";
 import { RiEmojiStickerLine } from "react-icons/ri";
 import { useSocket } from "@/context/SocketContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { IMessage } from "@/interface";
+import { InitialMessage } from "@/initialValue";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
@@ -31,9 +41,9 @@ function MessageContainer() {
     setSelectedChatMessages,
     setFileDownloadProgress,
     setIsDownloading,
-    typingUsers
+    typingUsers,
   } = useAppStore();
-  const socket:any = useSocket();
+  const socket: any = useSocket();
 
   const [showImage, setShowImage] = useState(false);
   const [imageUrl, setImageUrl] = useState(null);
@@ -43,14 +53,14 @@ function MessageContainer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
-
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editMessage, setEditMessage] = useState<IMessage>(InitialMessage);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [selectedChatMessages]);
-
 
   useEffect(() => {
     const getMessages = async () => {
@@ -126,7 +136,8 @@ function MessageContainer() {
     debounceTimeout.current = setTimeout(() => {
       const results = selectedChatMessages.filter(
         (msg: any) =>
-          msg.messageType === "text" && !msg.isDelete &&
+          msg.messageType === "text" &&
+          !msg.isDelete &&
           msg.content?.toLowerCase().includes(query.toLowerCase())
       );
       setSearchResults(results);
@@ -169,20 +180,20 @@ function MessageContainer() {
       const showDate = messageDate !== lastDate;
       lastDate = messageDate;
       return (
-          <div
-            key={message._id}
-            ref={(el) => {
-              messageRefs.current[message._id] = el;
-            }}
-          >
-            {showDate && (
-              <div className="text-center text-gray-500 my-2">
-                {moment(message.createdAt).format("LL")}
-              </div>
-            )}
-            {selectedChatType == "contact" && renderDMMessages(message)}
-            {selectedChatType == "channel" && renderChannelMessages(message)}
-          </div>
+        <div
+          key={message._id}
+          ref={(el) => {
+            messageRefs.current[message._id] = el;
+          }}
+        >
+          {showDate && (
+            <div className="text-center text-gray-500 my-2">
+              {moment(message.createdAt).format("LL")}
+            </div>
+          )}
+          {selectedChatType == "contact" && renderDMMessages(message)}
+          {selectedChatType == "channel" && renderChannelMessages(message)}
+        </div>
       );
     });
   };
@@ -200,7 +211,7 @@ function MessageContainer() {
     const imageRegex = /\.(mp3|wav|ogg)$/i;
     return imageRegex.test(filePath);
   };
-  
+
   const downloadFile = async (url: any) => {
     setIsDownloading(true);
     setFileDownloadProgress(0);
@@ -244,7 +255,8 @@ function MessageContainer() {
                 className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
                 onClick={() => {
                   setTooltipVisibleIndex(null);
-                  // Add edit logic here
+                  setEditMessage(message);
+                  setOpenEditModal(true);
                 }}
               >
                 <BiSolidEditAlt className="text-base text-blue-500" />
@@ -256,18 +268,18 @@ function MessageContainer() {
             className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
             onClick={() => {
               setTooltipVisibleIndex(null);
-              if(selectedChatType == 'contact'){
-                socket.emit("deleteDMMessage",{
+              if (selectedChatType == "contact") {
+                socket.emit("deleteDMMessage", {
                   sender: userInfo._id,
                   recipient: selectedChatData._id,
-                  messageId: message._id
-                })
-              } else if(selectedChatType == 'channel'){
-                socket.emit("deleteCHMessage",{
+                  messageId: message._id,
+                });
+              } else if (selectedChatType == "channel") {
+                socket.emit("deleteCHMessage", {
                   sender: userInfo._id,
                   channelId: selectedChatData._id,
-                  messageId: message._id
-                })
+                  messageId: message._id,
+                });
               }
             }}
           >
@@ -309,35 +321,48 @@ function MessageContainer() {
         }`}
       >
         {message.messageType == "text" && (
-          <div
-            className={`${
-              message.sender == selectedChatData._id
-                ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
-                : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
-            } ${message.isDelete ? 'opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed' : ''} border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
-          >
-            {!message.isDelete && message.sender !== selectedChatData._id && (
-              <div
-                className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
-                  message.sender === selectedChatData._id
-                    ? "-right-10"
-                    : "-left-12"
-                }`}
-              >
-                <BsThreeDotsVertical
-                  onClick={() => tooltipVisible(message)}
-                  className="cursor-pointer text-gray-400 hover:text-white transition"
-                />
-                <RiEmojiStickerLine
-                  onClick={() => setEmojiPickerOpen(true)}
-                  className="cursor-pointer text-gray-400 hover:text-white transition"
-                />
-              </div>
-            )}
-            {message.isDelete ? "Deleted" : message.content}
+          <>
+            {!message.isDelete &&
+              message.isEdit &&
+              message.sender !== selectedChatData._id && (
+                <div className="opacity-70 italic pointer-events-none select-none cursor-not-allowed">
+                  Edited
+                </div>
+              )}
+            <div
+              className={`${
+                message.sender == selectedChatData._id
+                  ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
+                  : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
+              } ${
+                message.isDelete
+                  ? "opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed"
+                  : ""
+              } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
+            >
+              {!message.isDelete && message.sender !== selectedChatData._id && (
+                <div
+                  className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
+                    message.sender === selectedChatData._id
+                      ? "-right-10"
+                      : "-left-12"
+                  }`}
+                >
+                  <BsThreeDotsVertical
+                    onClick={() => tooltipVisible(message)}
+                    className="cursor-pointer text-gray-400 hover:text-white transition"
+                  />
+                  <RiEmojiStickerLine
+                    onClick={() => setEmojiPickerOpen(true)}
+                    className="cursor-pointer text-gray-400 hover:text-white transition"
+                  />
+                </div>
+              )}
+              {message.isDelete ? "Deleted" : message.content}
 
-            {actionToolTipRender(message)}
-          </div>
+              {actionToolTipRender(message)}
+            </div>
+          </>
         )}
         {message.messageType == "file" && (
           <div
@@ -345,7 +370,11 @@ function MessageContainer() {
               message.sender == selectedChatData._id
                 ? "bg-[#2a2b33]/5 text-white/80 border-[#ffffff]/20"
                 : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
-            } ${message.isDelete ? 'opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed' : ''} border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
+            } ${
+              message.isDelete
+                ? "opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed"
+                : ""
+            } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
             {!message.isDelete && message.sender !== selectedChatData._id && (
               <div
@@ -365,7 +394,7 @@ function MessageContainer() {
                 />
               </div>
             )}
-             {message.isDelete && "Deleted"} 
+            {message.isDelete && "Deleted"}
             {!message.isDelete && checkIfImage(message.fileUrl) && (
               <div className="cursor-pointer">
                 <img
@@ -379,7 +408,7 @@ function MessageContainer() {
                 />
               </div>
             )}
-            {!message.isDelete &&checkIfDocument(message.fileUrl) && (
+            {!message.isDelete && checkIfDocument(message.fileUrl) && (
               <div className="flex items-center justify-center gap-4">
                 <span className="text-white/8 text-3xl bg-black/20 rounded-full p-3">
                   <MdFolderZip />
@@ -387,7 +416,7 @@ function MessageContainer() {
                 <span>{message.fileUrl.split("/").pop()}</span>
               </div>
             )}
-            {!message.isDelete &&checkIfAudio(message.fileUrl) && (
+            {!message.isDelete && checkIfAudio(message.fileUrl) && (
               <VoiceMessage message={message} />
             )}
             {actionToolTipRender(message)}
@@ -490,45 +519,91 @@ function MessageContainer() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
-      {searchInput()}
-      {renderMessages()}
-      {selectedChatType === "contact" &&
-            typingUsers[selectedChatData._id] && (
-              <div className="ml-2 text-sm text-center italic text-white/60 animate-pulse">
-                {`${selectedChatData.firstName || "User"} is recording/typing...`}
-              </div>
-            )}  
-      <div ref={scrollRef} />
-      {showImage && (
-        <div className="fixed z-[1000] top-0 left-0 h-[100vh] w-[100vw] flex items-center justify-center backdrop-blur-lg flex-col">
+    <>
+      <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
+        <DialogContent className="bg-[#181920] border-none text-white w-[400px] h-[400px] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Message</DialogTitle>
+            <DialogDescription></DialogDescription>
+          </DialogHeader>
           <div>
-            <img
-              src={`${HOST}/${imageUrl}`}
-              className="h-[80vh] w-full bg-cover"
+            <Input
+              placeholder="Search Contacts"
+              className="rounded-lg p-6 bg-[#2c2e3b] border-none"
+              value={editMessage.content}
+              onChange={(e) =>
+                setEditMessage({ ...editMessage, content: e.target.value })
+              }
             />
           </div>
-          <div className="flex gap-5 fixed top-0 mt-5">
-            <button
-              className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
-              onClick={() => downloadFile(imageUrl)}
-            >
-              <IoMdArrowRoundDown />
-            </button>
-
-            <button
-              className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+          <div>
+            <Button
+              className="w-full bg-purple-700 hover:bg-purple-900 transition-all duration-300"
               onClick={() => {
-                setImageUrl(null);
-                setShowImage(false);
+                if (selectedChatType == "contact") {
+                  socket.emit("updateDMMessage", {
+                    sender: userInfo._id,
+                    recipient: selectedChatData._id,
+                    messageId: editMessage._id,
+                    content: editMessage.content,
+                  });
+                } else if (selectedChatType == "channel") {
+                  socket.emit("updateDMMessage", {
+                    sender: userInfo._id,
+                    channelId: selectedChatData._id,
+                    messageId: editMessage._id,
+                  });
+                }
+                setOpenEditModal(false);
+                setEditMessage(InitialMessage);
               }}
             >
-              <IoCloseSharp />
-            </button>
+              Create Channel
+            </Button>
           </div>
-        </div>
-      )}
-    </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
+        {searchInput()}
+        {renderMessages()}
+        {selectedChatType === "contact" &&
+          typingUsers[selectedChatData._id] && (
+            <div className="ml-2 text-sm text-center italic text-white/60 animate-pulse">
+              {`${selectedChatData.firstName || "User"} is recording/typing...`}
+            </div>
+          )}
+        <div ref={scrollRef} />
+        {showImage && (
+          <div className="fixed z-[1000] top-0 left-0 h-[100vh] w-[100vw] flex items-center justify-center backdrop-blur-lg flex-col">
+            <div>
+              <img
+                src={`${HOST}/${imageUrl}`}
+                className="h-[80vh] w-full bg-cover"
+              />
+            </div>
+            <div className="flex gap-5 fixed top-0 mt-5">
+              <button
+                className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+                onClick={() => downloadFile(imageUrl)}
+              >
+                <IoMdArrowRoundDown />
+              </button>
+
+              <button
+                className="bg-black/20 p-3 text-2xl rounded-full hover:bg-black/50 cursor-pointer transition-all duration-300"
+                onClick={() => {
+                  setImageUrl(null);
+                  setShowImage(false);
+                }}
+              >
+                <IoCloseSharp />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
