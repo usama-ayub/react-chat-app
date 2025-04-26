@@ -125,6 +125,19 @@ function MessageContainer() {
     };
   }, []);
 
+    useEffect(() => {
+      function handleClickOutside(event: any) {
+        if (emojiMRef.current && !emojiMRef.current.contains(event.target)) {
+          setEmojiPickerOpen(false);
+          setOpenEmojiId('');
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [emojiMRef]);
+
   const scrollToMessage = (messageId: string | any) => {
     const element = messageRefs.current[messageId];
     if (element) {
@@ -181,8 +194,6 @@ function MessageContainer() {
   };
 
   const handleEmoji = async (data: any, messageId:string) => {
-    console.log(data.emoji);
-    console.log(messageId);
     if (selectedChatType == "contact") {
       socket.emit("reactionDMMessage", {
         sender: userInfo._id,
@@ -434,11 +445,13 @@ function MessageContainer() {
                   className="cursor-pointer text-gray-400 hover:text-white transition"
                 />
                 {openEmojiId === message._id && (
+                    <div className="absolute bottom-2 right-0" ref={emojiMRef}>
                   <EmojiPicker
-                    open={true}
+                    open={emojiPickerOpen}
                     onEmojiClick={(emoji) => handleEmoji(emoji, message._id)}
                     autoFocusSearch={false}
                   />
+                  </div>
                 )}
                 </div>
               )}
@@ -485,11 +498,15 @@ function MessageContainer() {
                   className="cursor-pointer text-gray-400 hover:text-white transition"
                 />
                 {openEmojiId === message._id && (
+                  <div className={`absolute bottom-2 ${
+                    message.sender == selectedChatData._id ? "left-0" : "right-0"
+                  }`} ref={emojiMRef}>
                   <EmojiPicker
-                    open={true}
+                    open={emojiPickerOpen}
                     onEmojiClick={(emoji) => handleEmoji(emoji, message._id)}
                     autoFocusSearch={false}
                   />
+                  </div>
                 )}
               </div>
             )}

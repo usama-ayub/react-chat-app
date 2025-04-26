@@ -57,7 +57,6 @@ function Profile() {
           { firstName, lastName, color: selectedColor },
           { withCredentials: true }
         );
-        console.log({ response });
         if (response.status == 200 && response.data._id) {
           setUserInfo(response.data);
           toast.success("Profile updated successfully");
@@ -65,7 +64,7 @@ function Profile() {
         }
       } catch (e) {
         toast.error("Something went wrong");
-        console.log(e);
+        console.error(e);
       }
     }
   };
@@ -83,7 +82,6 @@ function Profile() {
   };
 
   const handleUploadImage = async (event: any) => {
-    console.log(event.target.files[0]);
     const file = event.target.files[0];
     if (file) {
       const formData = new FormData();

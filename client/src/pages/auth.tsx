@@ -65,7 +65,6 @@ function Auth() {
     const handleSignup = async ()=>{
         if(validateSignup()){
         const response = await apiClient.post(SIGNUP_ROUTES,{email,password},{withCredentials:true});
-        console.log({response})
         if(response.status == 201){
             setUserInfo(response.data);
             navigate('/profile');

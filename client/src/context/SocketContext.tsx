@@ -62,7 +62,6 @@ export const SocketProvider = ({ children }:any) => {
         const {selectedChatData, selectedChatType, addMessage, addChannelInChannelList} = useAppStore.getState();
         if(selectedChatType !== undefined && selectedChatData._id === message.channelId
         ){
-          console.log("Message Receive", message)
           addMessage(message)
         }
         addChannelInChannelList(message)
@@ -99,7 +98,6 @@ export const SocketProvider = ({ children }:any) => {
         if(selectedChatType  && 
           (selectedChatData._id === message.sender._id ||
             selectedChatData._id === message.recipient._id)){
-          console.log(message)
           const selectedChat = [...selectedChatMessages];
           const index = selectedChat.findIndex((messageId:any)=>{
              return messageId._id == message._id
