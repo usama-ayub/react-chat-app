@@ -132,7 +132,7 @@
 }
 
 @keyframes flash {
-  0% { background-color: #fefcbf; }
+  0% { background-color: #FAD59A; }
   100% { background-color: transparent; }
 }
 

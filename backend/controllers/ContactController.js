@@ -94,7 +94,8 @@ export const getContactsForDMList = async (request, response) => {
 export const getAllContacts = async (request, response) => {
   try {
     const users = await User.find({
-      _id: { $ne: request.userId }
+      _id: { $ne: request.userId },
+      profileStatus: { $eq: true }
     },  "firstName lastName _id");
     const contacts = users.map((user)=>(
       {

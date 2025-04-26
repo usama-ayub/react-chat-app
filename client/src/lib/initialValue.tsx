@@ -11,5 +11,7 @@ export const InitialMessage: IMessage = {
     fileUrl: '',
     createdAt: '',
     updatedAt: '',
+    replyId: '',
+    reaction: '',
     __v: 0
   }

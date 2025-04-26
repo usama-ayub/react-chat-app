@@ -9,5 +9,7 @@ export interface IMessage {
     fileUrl?: string;
     createdAt: string; 
     updatedAt: string;
+    replyId?: string;
+    reaction?: string;
     __v: number;
 }

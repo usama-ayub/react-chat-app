@@ -31,8 +31,8 @@ const setupSocket = (server) => {
     const createdMessage = await Message.create(message);
 
     const messageData = await Message.findById(createdMessage._id)
-    .populate("sender","id email firstName lastName image color")
-    .populate("recipient","id email firstName lastName image color");
+    .populate("sender","id email firstName lastName image color replyId")
+    .populate("recipient","id email firstName lastName image color replyId");
     
     if(recipientSocketId){
       io.to(recipientSocketId).emit("recieveMessage", messageData)

@@ -21,7 +21,10 @@ export const signup = async (request, response) => {
         secure:true,
         sameSite: "None"
       })
-      return response.status(201).json(user)
+      const userData = user.toObject();
+      delete userData.password;
+      delete userData.updatedAt;
+      return response.status(201).json(userData)
     } catch (error) {
         return response.status(500).send("Internal Server Error");
     }
@@ -30,28 +33,31 @@ export const signup = async (request, response) => {
 
 export const login = async (request, response) => {
   try {
-    const {email, password} = request.body;
-    if(!email || !password){
+    const { email, password } = request.body;
+    if (!email || !password) {
       return response.status(400).send("Email and Password is required");
     }
-    const user = await User.findOne({email});
-    if(!user) return response.status(400).send("Email not found.");
+    const user = await User.findOne({ email });
+    if (!user) return response.status(400).send("Email not found.");
     const auth = await compare(password, user.password);
-    if(!auth) return response.status(400).send("Password is incorrect."); 
-    response.cookie('jwt',createToken(email, user.id),{
+    if (!auth) return response.status(400).send("Password is incorrect.");
+    response.cookie("jwt", createToken(email, user.id), {
       maxAge,
-      secure:true,
-      sameSite: "None"
-    })
-    return response.status(201).json(user)
+      secure: true,
+      sameSite: "None",
+    });
+    const userData = user.toObject();
+    delete userData.password;
+    delete userData.updatedAt;
+    return response.status(201).json(userData);
   } catch (error) {
-      return response.status(500).send("Internal Server Error");
+    return response.status(500).send("Internal Server Error");
   }
-}
+};
 
 export const getUserInfo = async (request, response) => {
   try {
-    const user = await User.findById(request.userId);
+    const user = await User.findById(request.userId).select('-password -updatedAt');
     if(!user) return response.status(404).send("User not found."); 
     return response.status(200).send(user);
   } catch (error) {

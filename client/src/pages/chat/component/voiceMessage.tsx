@@ -20,7 +20,7 @@ function VoiceMessage({ message }: any) {
         progressColor: "#4a9eff",
         cursorColor: "#7ae3c3",
         barWidth: 2,
-        height: 30,
+        height: 15,
       });
       waveform.current.on("finish", () => {
         setIsPlaying(false);

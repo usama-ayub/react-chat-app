@@ -18,3 +18,17 @@ export const animationDefaultOptions = {
   //   preserveAspectRatio: 'xMidYMid slice'
   // }
 };
+
+export const checkIfImage = (filePath: string | any) => {
+  const imageRegex =
+    /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
+  return imageRegex.test(filePath);
+};
+export const checkIfDocument = (filePath: string | any): boolean => {
+  const docExtensions = /\.(docx?|xlsx?|pptx?|pdf|txt|rtf|odt|ods|odp|csv)$/i;
+  return docExtensions.test(filePath);
+};
+export const checkIfAudio = (filePath: string | any) => {
+  const imageRegex = /\.(mp3|wav|ogg)$/i;
+  return imageRegex.test(filePath);
+};

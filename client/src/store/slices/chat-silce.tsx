@@ -10,8 +10,10 @@ export const createChatSlice = (set: any, get: any) => ({
   channels: [],
   directMessagesNotifications:{},
   typingUsers: {},
+  replyMessage: {},
   setChannels: (channels: Array<any>) => set({ channels }),
   setDirectMessagesNotifications: (directMessagesNotifications: any) => set({ directMessagesNotifications }),
+  setReplyMessage: (replyMessage: any) => set({ replyMessage }),
   setTypingUser: (userId: string) => {
     const typingUsers = { ...get().typingUsers };
     typingUsers[userId] = true;

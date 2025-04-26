@@ -10,10 +10,18 @@ import { MdDelete } from "react-icons/md";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { BiSolidEditAlt } from "react-icons/bi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getColor } from "@/lib/utils";
+import {
+  checkIfAudio,
+  checkIfDocument,
+  checkIfImage,
+  getColor,
+} from "@/lib/utils";
 import VoiceMessage from "./voiceMessage";
 import { Input } from "@/components/ui/input";
 import { RiEmojiStickerLine } from "react-icons/ri";
+import { GoReply } from "react-icons/go";
+import { GrAttachment } from "react-icons/gr";
+import { FaMicrophone } from "react-icons/fa";
 import { useSocket } from "@/context/SocketContext";
 import {
   Dialog,
@@ -23,8 +31,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IMessage } from "@/interface";
-import { InitialMessage } from "@/initialValue";
+import { IMessage } from "@/lib/interface";
+import { InitialMessage } from "@/lib/initialValue";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
@@ -42,11 +50,12 @@ function MessageContainer() {
     setFileDownloadProgress,
     setIsDownloading,
     typingUsers,
+    setReplyMessage,
   } = useAppStore();
   const socket: any = useSocket();
 
   const [showImage, setShowImage] = useState(false);
-  const [imageUrl, setImageUrl] = useState(null);
+  const [imageUrl, setImageUrl] = useState<string | any>("");
   const [tooltipVisibleIndex, setTooltipVisibleIndex] = useState<number | null>(
     null
   );
@@ -114,7 +123,7 @@ function MessageContainer() {
     };
   }, []);
 
-  const scrollToMessage = (messageId: string) => {
+  const scrollToMessage = (messageId: string | any) => {
     const element = messageRefs.current[messageId];
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -198,20 +207,6 @@ function MessageContainer() {
     });
   };
 
-  const checkIfImage = (filePath: string) => {
-    const imageRegex =
-      /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
-    return imageRegex.test(filePath);
-  };
-  const checkIfDocument = (filePath: string): boolean => {
-    const docExtensions = /\.(docx?|xlsx?|pptx?|pdf|txt|rtf|odt|ods|odp|csv)$/i;
-    return docExtensions.test(filePath);
-  };
-  const checkIfAudio = (filePath: string) => {
-    const imageRegex = /\.(mp3|wav|ogg)$/i;
-    return imageRegex.test(filePath);
-  };
-
   const downloadFile = async (url: any) => {
     setIsDownloading(true);
     setFileDownloadProgress(0);
@@ -237,67 +232,85 @@ function MessageContainer() {
       tooltipVisibleIndex === message._id && (
         <div
           ref={tooltipRef}
-          className="absolute right-full ml-2 top-1/2 -translate-y-1/2 bg-white text-gray-800 shadow-md rounded-md z-20 flex flex-col px-2 py-1 border border-gray-200 w-max"
+          className={`absolute ml-2 top-1/2 -translate-y-1/2 bg-white text-gray-800 shadow-md rounded-md z-20 flex flex-col px-2 py-1 border border-gray-200 w-max
+          ${
+            message.sender !== selectedChatData._id ? "right-full" : "left-full"
+          }
+            `}
         >
-          {message.messageType === "text" && (
-            <>
-              <button
-                className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
-                onClick={() => {
-                  navigator.clipboard.writeText(message.content);
-                  setTooltipVisibleIndex(null);
-                }}
-              >
-                <IoCopy className="text-base" />
-                <span>Copy</span>
-              </button>
-              <button
-                className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
-                onClick={() => {
-                  setTooltipVisibleIndex(null);
-                  setEditMessage(message);
-                  setOpenEditModal(true);
-                }}
-              >
-                <BiSolidEditAlt className="text-base text-blue-500" />
-                <span>Edit</span>
-              </button>
-            </>
-          )}
           <button
             className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
             onClick={() => {
               setTooltipVisibleIndex(null);
-              if (selectedChatType == "contact") {
-                socket.emit("deleteDMMessage", {
-                  sender: userInfo._id,
-                  recipient: selectedChatData._id,
-                  messageId: message._id,
-                });
-              } else if (selectedChatType == "channel") {
-                socket.emit("deleteCHMessage", {
-                  sender: userInfo._id,
-                  channelId: selectedChatData._id,
-                  messageId: message._id,
-                });
-              }
+              setReplyMessage(message);
             }}
           >
-            <MdDelete className="text-base text-red-500" />
-            <span>Delete</span>
+            <GoReply className="text-base" />
+            <span>Reply</span>
           </button>
+          {message.sender !== selectedChatData._id && (
+            <>
+              {message.messageType === "text" && (
+                <>
+                  <button
+                    className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      setTooltipVisibleIndex(null);
+                    }}
+                  >
+                    <IoCopy className="text-base" />
+                    <span>Copy</span>
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                    onClick={() => {
+                      setTooltipVisibleIndex(null);
+                      setEditMessage(message);
+                      setOpenEditModal(true);
+                    }}
+                  >
+                    <BiSolidEditAlt className="text-base text-blue-500" />
+                    <span>Edit</span>
+                  </button>
+                </>
+              )}
+              <button
+                className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                onClick={() => {
+                  setTooltipVisibleIndex(null);
+                  if (selectedChatType == "contact") {
+                    socket.emit("deleteDMMessage", {
+                      sender: userInfo._id,
+                      recipient: selectedChatData._id,
+                      messageId: message._id,
+                    });
+                  } else if (selectedChatType == "channel") {
+                    socket.emit("deleteCHMessage", {
+                      sender: userInfo._id,
+                      channelId: selectedChatData._id,
+                      messageId: message._id,
+                    });
+                  }
+                }}
+              >
+                <MdDelete className="text-base text-red-500" />
+                <span>Delete</span>
+              </button>
 
-          {message.messageType === "file" && (
-            <button
-              className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
-              onClick={() => {
-                setTooltipVisibleIndex(null);
-                downloadFile(message.fileUrl);
-              }}
-            >
-              <IoMdArrowRoundDown className="text-base text-blue-500" />
-              <span>Download</span>
-            </button>
+              {message.messageType === "file" && (
+                <button
+                  className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-100 rounded"
+                  onClick={() => {
+                    setTooltipVisibleIndex(null);
+                    downloadFile(message.fileUrl);
+                  }}
+                >
+                  <IoMdArrowRoundDown className="text-base text-blue-500" />
+                  <span>Download</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       )
@@ -305,20 +318,28 @@ function MessageContainer() {
   };
 
   const tooltipVisible = (message: any) => {
-    if (message.sender == selectedChatData._id) {
-      return setTooltipVisibleIndex(null);
-    }
+    // if (message.sender == selectedChatData._id) {
+    //   return setTooltipVisibleIndex(null);
+    // }
     setTooltipVisibleIndex(
       tooltipVisibleIndex === message._id ? null : message._id
     );
   };
 
-  const renderDMMessages = (message: any) => {
+  const renderRepliedMessage = (data: IMessage) => {
+    const replyMessage: IMessage = selectedChatMessages.find(
+      (message: IMessage) => {
+        return message._id == data.replyId;
+      }
+    );
+    return replyMessage;
+  };
+  const renderDMMessages = (message: IMessage) => {
     return (
       <div
         className={`${
           message.sender == selectedChatData._id ? "text-left" : "text-right"
-        }`}
+        } my-5`}
       >
         {message.messageType == "text" && (
           <>
@@ -329,6 +350,40 @@ function MessageContainer() {
                   Edited
                 </div>
               )}
+            {message.replyId && (
+              <div
+                onClick={() => scrollToMessage(message.replyId)}
+                style={{ borderBottom: "none" }}
+                className={`opacity-70 italic cursor-pointer text-sm max-w-[30%] border border-[#8417ff]/50 p-3 rounded overflow-hidden whitespace-nowrap truncate
+                   ${
+                     message.sender == selectedChatData._id
+                       ? "mr-auto border-[#ffffff]/50"
+                       : "ml-auto border-[#8417ff]/50"
+                   }`}
+              >
+                {renderRepliedMessage(message).content ? (
+                  renderRepliedMessage(message).content
+                ) : (
+                  <>
+                    {checkIfAudio(renderRepliedMessage(message).fileUrl) ? (
+                      <>
+                        <span className="flex items-center justify-end">
+                          <FaMicrophone />
+                          Voice Message
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex items-center justify-end">
+                          <GrAttachment />
+                          Attachment
+                        </span>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
             <div
               className={`${
                 message.sender == selectedChatData._id
@@ -336,11 +391,11 @@ function MessageContainer() {
                   : "bg-[#8417ff]/5 text-[#8417ff]/90 border-[#8417ff]/50"
               } ${
                 message.isDelete
-                  ? "opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed"
-                  : ""
-              } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
+                  ? "opacity-50 line-through italic pointer-events-none select-none cursor-not-allowed p-2"
+                  : "p-4"
+              } border inline-block rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
             >
-              {!message.isDelete && message.sender !== selectedChatData._id && (
+              {!message.isDelete && (
                 <div
                   className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
                     message.sender === selectedChatData._id
@@ -361,6 +416,13 @@ function MessageContainer() {
               {message.isDelete ? "Deleted" : message.content}
 
               {actionToolTipRender(message)}
+              {
+                message.reaction && (
+                  <span className="absolute top-12 -right-1 text-white text-sm font-semibold rounded-full px-1.5 py-0.5 leading-none">
+                  {message.reaction}
+                  </span>
+                )
+              }
             </div>
           </>
         )}
@@ -376,7 +438,7 @@ function MessageContainer() {
                 : ""
             } border inline-block p-4 rounded my-1 max-w-[50%] break-words cursor-pointer relative`}
           >
-            {!message.isDelete && message.sender !== selectedChatData._id && (
+            {!message.isDelete && (
               <div
                 className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${
                   message.sender === selectedChatData._id
@@ -413,7 +475,9 @@ function MessageContainer() {
                 <span className="text-white/8 text-3xl bg-black/20 rounded-full p-3">
                   <MdFolderZip />
                 </span>
-                <span>{message.fileUrl.split("/").pop()}</span>
+                <span>
+                  {message.fileUrl && message.fileUrl.split("/").pop()}
+                </span>
               </div>
             )}
             {!message.isDelete && checkIfAudio(message.fileUrl) && (

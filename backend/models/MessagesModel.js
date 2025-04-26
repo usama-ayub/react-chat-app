@@ -37,6 +37,15 @@ const messageSchema = new mongoose.Schema(
                 return this.messageType == 'file';
             },
         },
+        replyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"Messages",
+            required: false
+        },
+        reaction: {
+            type: String,
+            required: false
+        },
     },
     {
         timestamps: true
