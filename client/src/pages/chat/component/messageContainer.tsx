@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { IMessage } from "@/lib/interface";
 import { InitialMessage } from "@/lib/initialValue";
 import EmojiPicker from "emoji-picker-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
@@ -66,7 +67,7 @@ function MessageContainer() {
   const [openEmojiId, setOpenEmojiId] = useState<string>('');
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editMessage, setEditMessage] = useState<IMessage>(InitialMessage);
-
+  const [loader, setLoader] = useState<boolean>(true); 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth" });
@@ -84,9 +85,12 @@ function MessageContainer() {
           }
         );
         if (response.status == 200) {
+          setLoader(false);
           setSelectedChatMessages(response.data.messages);
         }
-      } catch (e) {}
+      } catch (e) {
+        setLoader(false);
+      }
     };
     const getChannelMessages = async () => {
       try {
@@ -641,6 +645,37 @@ function MessageContainer() {
     );
   };
 
+  const messageSkeleton = () => {
+    return (
+      <div className="mt-5">
+      <div className="flex justify-start align-bottom mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-end mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-start mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-end mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-start mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-end mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-start mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      <div className="flex justify-end mb-4">
+        <Skeleton className="w-1/2 p-4 bg-gray-200" />
+      </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Dialog open={openEditModal} onOpenChange={setOpenEditModal}>
@@ -689,7 +724,7 @@ function MessageContainer() {
 
       <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
         {searchInput()}
-        {renderMessages()}
+        {loader ? messageSkeleton() : renderMessages()}
         {selectedChatType === "contact" &&
           typingUsers[selectedChatData._id] && (
             <div className="ml-2 text-sm text-center italic text-white/60 animate-pulse">
