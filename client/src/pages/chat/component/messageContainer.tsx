@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { IMessage } from "@/lib/interface";
 import { InitialMessage } from "@/lib/initialValue";
+import EmojiPicker from "emoji-picker-react";
 
 function MessageContainer() {
   const scrollRef = useRef<any>(null);
@@ -62,6 +63,7 @@ function MessageContainer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [openEmojiId, setOpenEmojiId] = useState<string>('');
   const [openEditModal, setOpenEditModal] = useState(false);
   const [editMessage, setEditMessage] = useState<IMessage>(InitialMessage);
 
@@ -178,8 +180,25 @@ function MessageContainer() {
     );
   };
 
-  const handleEmoji = async (emoji: any) => {
-    console.log(emoji);
+  const handleEmoji = async (data: any, messageId:string) => {
+    console.log(data.emoji);
+    console.log(messageId);
+    if (selectedChatType == "contact") {
+      socket.emit("reactionDMMessage", {
+        sender: userInfo._id,
+        recipient: selectedChatData._id,
+        messageId: messageId,
+        reaction: data.emoji,
+      });
+    } else if (selectedChatType == "channel") {
+      // socket.emit("reactionCHMessage", {
+      //   sender: userInfo._id,
+      //   channelId: selectedChatData._id,
+      //   messageId: messageId,
+      // });
+    }
+    setEmojiPickerOpen(false);
+    setOpenEmojiId('');
   };
 
   const renderMessages = () => {
@@ -407,22 +426,30 @@ function MessageContainer() {
                     onClick={() => tooltipVisible(message)}
                     className="cursor-pointer text-gray-400 hover:text-white transition"
                   />
-                  <RiEmojiStickerLine
-                    onClick={() => setEmojiPickerOpen(true)}
-                    className="cursor-pointer text-gray-400 hover:text-white transition"
+                 <RiEmojiStickerLine
+                  onClick={() => {
+                    setOpenEmojiId(message._id);
+                    setEmojiPickerOpen(true);
+                  }}
+                  className="cursor-pointer text-gray-400 hover:text-white transition"
+                />
+                {openEmojiId === message._id && (
+                  <EmojiPicker
+                    open={true}
+                    onEmojiClick={(emoji) => handleEmoji(emoji, message._id)}
+                    autoFocusSearch={false}
                   />
+                )}
                 </div>
               )}
               {message.isDelete ? "Deleted" : message.content}
 
               {actionToolTipRender(message)}
-              {
-                message.reaction && (
-                  <span className="absolute top-12 -right-1 text-white text-sm font-semibold rounded-full px-1.5 py-0.5 leading-none">
+              {message.reaction && (
+                <span className="absolute top-12 -right-1 text-white font-semibold rounded-full px-1.5 py-0.5 leading-none">
                   {message.reaction}
-                  </span>
-                )
-              }
+                </span>
+              )}
             </div>
           </>
         )}
@@ -451,9 +478,19 @@ function MessageContainer() {
                   className="cursor-pointer text-gray-400 hover:text-white transition"
                 />
                 <RiEmojiStickerLine
-                  onClick={() => setEmojiPickerOpen(true)}
+                  onClick={() => {
+                    setOpenEmojiId(message._id);
+                    setEmojiPickerOpen(true);
+                  }}
                   className="cursor-pointer text-gray-400 hover:text-white transition"
                 />
+                {openEmojiId === message._id && (
+                  <EmojiPicker
+                    open={true}
+                    onEmojiClick={(emoji) => handleEmoji(emoji, message._id)}
+                    autoFocusSearch={false}
+                  />
+                )}
               </div>
             )}
             {message.isDelete && "Deleted"}
@@ -484,6 +521,11 @@ function MessageContainer() {
               <VoiceMessage message={message} />
             )}
             {actionToolTipRender(message)}
+            {message.reaction && (
+                <span className="absolute top-15 -right-1 text-white font-semibold rounded-full px-1.5 py-0.5 leading-none">
+                  {message.reaction}
+                </span>
+              )}
           </div>
         )}
         <div className="text-xs text-gray-600">

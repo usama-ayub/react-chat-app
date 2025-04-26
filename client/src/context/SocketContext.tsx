@@ -68,8 +68,10 @@ export const SocketProvider = ({ children }:any) => {
         addChannelInChannelList(message)
       };
       const handleDMDeleteMessage =(message:any)=>{
-        const {selectedChatType, selectedChatMessages, setSelectedChatMessages} = useAppStore.getState();
-        if(selectedChatType){
+        const {selectedChatType, selectedChatMessages, setSelectedChatMessages, selectedChatData} = useAppStore.getState();
+        if(selectedChatType  && 
+          (selectedChatData._id === message.sender._id ||
+            selectedChatData._id === message.recipient._id)){
           const selectedChat = [...selectedChatMessages];
           const index = selectedChat.findIndex((messageId:any)=>{
              return messageId._id == message._id
@@ -79,14 +81,30 @@ export const SocketProvider = ({ children }:any) => {
         }
       }
       const updateDMMessage =(message:any)=>{
-        const {selectedChatType, selectedChatMessages, setSelectedChatMessages} = useAppStore.getState();
-        if(selectedChatType){
+        const {selectedChatData, selectedChatType, selectedChatMessages, setSelectedChatMessages} = useAppStore.getState();
+        if(selectedChatType  && 
+          (selectedChatData._id === message.sender._id ||
+            selectedChatData._id === message.recipient._id)){
           const selectedChat = [...selectedChatMessages];
           const index = selectedChat.findIndex((messageId:any)=>{
              return messageId._id == message._id
           });
           selectedChat[index].isEdit = message.isEdit;
           selectedChat[index].content = message.content;
+          setSelectedChatMessages(selectedChat);
+        }
+      }
+      const reactionDMMessage =(message:any)=>{
+        const {selectedChatData,selectedChatType, selectedChatMessages, setSelectedChatMessages} = useAppStore.getState();
+        if(selectedChatType  && 
+          (selectedChatData._id === message.sender._id ||
+            selectedChatData._id === message.recipient._id)){
+          console.log(message)
+          const selectedChat = [...selectedChatMessages];
+          const index = selectedChat.findIndex((messageId:any)=>{
+             return messageId._id == message._id
+          });
+          selectedChat[index].reaction = message.reaction;
           setSelectedChatMessages(selectedChat);
         }
       }
@@ -104,6 +122,7 @@ export const SocketProvider = ({ children }:any) => {
       });
       socket.current.on('deleteDMMessage',handleDMDeleteMessage);
       socket.current.on('updateDMMessage',updateDMMessage);
+      socket.current.on('reactionDMMessage',reactionDMMessage);
       return () => {
         socket.current.disconnect();
       };

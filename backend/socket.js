@@ -139,6 +139,30 @@ const setupSocket = (server) => {
       io.to(senderSocketId).emit("updateDMMessage", messageData)
     }
   }
+
+  const reactionDMMessage = async (message)=>{
+    console.log(message)
+    const {messageId, sender, recipient, reaction} = message
+    const senderSocketId = userSocketMap.get(sender);
+    const recipientSocketId = userSocketMap.get(recipient);
+
+    const updatedMessage = await Message.findByIdAndUpdate(messageId,{
+      reaction:reaction
+    });
+
+    const messageData = await Message.findById(updatedMessage._id)
+    .populate("sender","id email firstName lastName image color")
+    .populate("recipient","id email firstName lastName image color");
+    
+    if(recipientSocketId){
+      io.to(recipientSocketId).emit("reactionDMMessage", messageData)
+    }
+
+    if(senderSocketId){
+      io.to(senderSocketId).emit("reactionDMMessage", messageData)
+    }
+  }
+
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
     if (userId) {
@@ -155,6 +179,7 @@ const setupSocket = (server) => {
     socket.on("stopTyping", stopTyping(socket));
     socket.on("deleteDMMessage", deleteDMMessage);
     socket.on("updateDMMessage", updateDMMessage);
+    socket.on("reactionDMMessage", reactionDMMessage);
     socket.on("disconnect", () => {
       disconnect(socket);
       broadcastUserStatus();
