@@ -1,6 +1,6 @@
 import ProfileInfo from "@/pages/profile/profileInfo";
 import NewDM from "./newDM";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GET_DM_CONTACTS, GET_USER_CHANNELS } from "@/constants";
 import { apiClient } from "@/lib/api-client";
 import { useAppStore } from "@/store";
@@ -9,8 +9,12 @@ import CreateChannel from "./createChannel";
 
 function ContactContainer() {
   const {setDirectMessagesContacts ,directMessagesContacts, channels,setChannels } = useAppStore();
+  const [DMContactLoader, setDMContactLoader] = useState<boolean>(false);
+  const [CHContactLoader, setCHContactLoader] = useState<boolean>(false);
+
   useEffect(()=>{
       const getContacts = async ()=>{
+        setDMContactLoader(true)
         try {
           const response = await apiClient.get(
             GET_DM_CONTACTS,
@@ -19,12 +23,18 @@ function ContactContainer() {
             }
           );
           if (response.status == 200) {
+            setDMContactLoader(false)
             setDirectMessagesContacts(response.data.contacts);
+          } else {
+            setDMContactLoader(false)
           }
-        } catch (e) {}
+        } catch (e) {
+          setDMContactLoader(false)
+        }
       }
 
       const getChannels = async ()=>{
+        setCHContactLoader(true);
         try {
           const response = await apiClient.get(
             GET_USER_CHANNELS,
@@ -33,9 +43,14 @@ function ContactContainer() {
             }
           );
           if (response.status == 200) {
+            setCHContactLoader(false);
             setChannels(response.data.channels);
+          } else {
+            setCHContactLoader(false);
           }
-        } catch (e) {}
+        } catch (e) {
+          setCHContactLoader(false);
+        }
       }
       getContacts();
       getChannels();
@@ -50,7 +65,7 @@ function ContactContainer() {
         <div className="my-5">
           <div className="flex items-center justify-between pr-10">
             <Title text='Direct Messages'/>
-            <NewDM/>
+            <NewDM loader={DMContactLoader}/>
           </div>
           <div className="max-h-[38vh] overflow-y-auto scrollbar-hidden">
               <ContactList contacts={directMessagesContacts} />
@@ -59,7 +74,7 @@ function ContactContainer() {
         <div className="my-5">
           <div className="flex items-center justify-between pr-10">
             <Title text='Channels'/>
-            <CreateChannel />
+            <CreateChannel loader={CHContactLoader} />
           </div>
           <div className="max-h-[38vh] overflow-y-auto scrollbar-hidden">
               <ContactList contacts={channels} isChannel={true} />

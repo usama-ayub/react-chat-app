@@ -11,7 +11,7 @@ import { TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner';
-
+import { Loader } from "@/components/ui/loader";
 
 function Auth() {
     const navigate = useNavigate();
@@ -19,6 +19,7 @@ function Auth() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [confirmPassword, setConfirmPassword] = useState<string>('');
+    const [loader, setLoader] = useState<boolean>(false); 
 
     const validateSignup = ()=>{
         if(!email.length){
@@ -48,29 +49,54 @@ function Auth() {
         }
         return true;
     }
-    const handleLogin = async ()=>{
-       if(validateLogin()){
-         const response = await apiClient.post(LOGIN_ROUTES,{email,password},{withCredentials:true});
-         if(response.data._id){
+    const handleLogin = async () => {
+      if (validateLogin()) {
+        setLoader(true);
+        try {
+          const response = await apiClient.post(
+            LOGIN_ROUTES,
+            { email, password },
+            { withCredentials: true }
+          );
+          if (response.data._id) {
+            setLoader(false);
             setUserInfo(response.data);
-            if(response.data.profileStatus){
-                navigate('/chat');
-            } else{
-                navigate('/profile');
+            if (response.data.profileStatus) {
+              navigate("/chat");
+            } else {
+              navigate("/profile");
             }
+          } else{
+            setLoader(false);
+          }
+        } catch (e) {
+            setLoader(false);
         }
-       }
-    }
+      }
+    };
 
-    const handleSignup = async ()=>{
-        if(validateSignup()){
-        const response = await apiClient.post(SIGNUP_ROUTES,{email,password},{withCredentials:true});
-        if(response.status == 201){
+    const handleSignup = async () => {
+      if (validateSignup()) {
+        setLoader(true);
+        try {
+          const response = await apiClient.post(
+            SIGNUP_ROUTES,
+            { email, password },
+            { withCredentials: true }
+          );
+          if (response.status == 201) {
+            setLoader(false);
             setUserInfo(response.data);
-            navigate('/profile');
+            navigate("/profile");
+          } else {
+            setLoader(false);
+          }
+        } catch (e) {
+          setLoader(false);
         }
-        }
-    }
+      }
+    };
+
     return (
         <div className="h-[100vh] w-[100vw] flex items-center justify-center">
             <div className="h-[80vh] bg-white border-white text-opacity-90 shadow-2xl w-[80vw] md:w-[90vw] lg:w-[70vw] xl:w-[60vw] rounded-3xl grid xl:grid-cols-2">
@@ -93,13 +119,17 @@ function Auth() {
                             <TabsContent className='flex flex-col gap-5' value='login'>
                                 <Input placeholder='Email' type='email' className='rounded-full p-6' value={email} onChange={(e) => setEmail(e.target.value)} />
                                 <Input placeholder='Password' type='password' className='rounded-full p-6' value={password} onChange={(e) => setPassword(e.target.value)} />
-                                <Button className='rounded-full p-6' onClick={handleLogin}>Login</Button>
+                                <Button className='rounded-full p-6' onClick={handleLogin}>
+                                    {loader ? <Loader/> : 'Login'}
+                                </Button>
                             </TabsContent>
                             <TabsContent className='flex flex-col gap-5' value='signup'>
                             <Input placeholder='Email' type='email' className='rounded-full p-6' value={email} onChange={(e) => setEmail(e.target.value)} />
                                 <Input placeholder='Password' type='password' className='rounded-full p-6' value={password} onChange={(e) => setPassword(e.target.value)} />
                                 <Input placeholder='Confirm Password' type='password' className='rounded-full p-6' value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                                <Button className='rounded-full p-6' onClick={handleSignup}>Signup</Button>
+                                <Button className='rounded-full p-6' onClick={handleSignup}>
+                                {loader ? <Loader/> : 'Signup'}
+                                </Button>
                             </TabsContent>
                         </Tabs>
                     </div>

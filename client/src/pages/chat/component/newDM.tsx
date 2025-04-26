@@ -21,8 +21,14 @@ import { HOST, SEARCH_CONTACT_ROUTES } from "@/constants";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { useAppStore } from "@/store";
+import { Loader } from "@/components/ui/loader";
 
-function NewDM() {
+interface IProps {
+  loader:boolean
+}
+
+function NewDM(porps:IProps) {
+
   const { setSelectedChatType, setSelectedChatData } = useAppStore();
 
   const [openNewContactModal, setOpenNewContactModal] = useState(false);
@@ -59,10 +65,14 @@ function NewDM() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <FaPlus
-              className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
-              onClick={() => setOpenNewContactModal(true)}
-            />
+            {porps.loader ? (
+              <Loader />
+            ) : (
+              <FaPlus
+                className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
+                onClick={() => setOpenNewContactModal(true)}
+              />
+            )}
           </TooltipTrigger>
           <TooltipContent className="bg-[#1c1b1e] border-none text-white mb-3 p-3">
             Select New Contact

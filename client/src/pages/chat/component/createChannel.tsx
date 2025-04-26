@@ -19,8 +19,13 @@ import { CREATE_CHANNEL, GET_ALL_CONTACTS, HOST, SEARCH_CONTACT_ROUTES } from "@
 import { useAppStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import MultipleSelector from "@/components/ui/multi-select";
+import { Loader } from "@/components/ui/loader";
 
-function CreateChannel() {
+interface IProps {
+  loader:boolean
+}
+
+function CreateChannel(props:IProps) {
   const { setSelectedChatType, setSelectedChatData, addChannel } = useAppStore();
 
   const [newChannelModal, setNewChannelModal] = useState(false);
@@ -67,10 +72,14 @@ function CreateChannel() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <FaPlus
-              className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
-              onClick={() => setNewChannelModal(true)}
-            />
+            {props.loader ? (
+              <Loader />
+            ) : (
+              <FaPlus
+                className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
+                onClick={() => setNewChannelModal(true)}
+              />
+            )}
           </TooltipTrigger>
           <TooltipContent className="bg-[#1c1b1e] border-none text-white mb-3 p-3">
             Select New Contact
@@ -102,7 +111,9 @@ function CreateChannel() {
               value={selectedContacts}
               onChange={setSelectedContacts}
               emptyIndicator={
-                <p className="text-center text-lg leading-10 text-gray-600">No result found</p>
+                <p className="text-center text-lg leading-10 text-gray-600">
+                  No result found
+                </p>
               }
             />
           </div>
